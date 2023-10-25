@@ -1,0 +1,28 @@
+{
+  "title": "TreasureNet",
+  "network": "treasurenet_5005-1",
+  "icon": "https://cosmosexplorer.testnet.treasurenet.io/statics/TNT_log_small_new.png",
+  "logo": {
+     "default": "https://cosmosexplorer.testnet.treasurenet.io/statics/TNT_logo_big.png"
+  },
+  "prefix": {
+    "consensus": "treasurenetvalcons",
+    "validator": "treasurenetvaloper",
+    "account": "treasurenet"
+  },
+  "genesis": {
+    "time": "2021-07-13T08:00:00",
+    "height": 1
+  },
+  "primaryTokenUnit": "aunit",
+  "votingPowerTokenUnit": "aunit",
+  "tokenUnits": {
+    "aunit": {
+      "display": "unit",
+      "exponent": 18
+    }
+  },
+  "extra": {
+    "profile": true
+  }
+}
