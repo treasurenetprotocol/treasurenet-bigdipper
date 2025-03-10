@@ -54,6 +54,7 @@
     - name: Install callisto (make install)
       shell: |
         cd /home/ubuntu/data/callisto
+        source /etc/profile
         make install
       args:
         executable: /bin/bash
