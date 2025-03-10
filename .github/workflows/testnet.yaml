@@ -70,24 +70,16 @@ jobs:
     steps:
 
 
-      - name: configure aws credentials
-        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
+
+
+      - name: Configure AWS credentials2
+        uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_MANAGEMENT_ACCOUNT }}:role/${{ needs.EnvSetup.outputs.gha-role-name }}
-          role-session-name: GitHub_to_AWS_via_FederatedOIDC
-          aws-region: ${{ needs.EnvSetup.outputs.ecr-repo-aws-region }}
+          role-to-assume: arn:aws:iam::381492270411:role/full-ec2
+          aws-region: us-west-1
+          role-session-name: github-actions
+          audience: GitHub_to_AWS_via_FederatedOIDC_test
 
-
-      # - name: Configure AWS credentials2
-      #   uses: aws-actions/configure-aws-credentials@v1
-      #   with:
-      #     role-to-assume: arn:aws:iam::381492270411:role/full-ec2
-      #     aws-region: us-west-1
-      #     role-session-name: github-actions
-      #     audience: GitHub_to_AWS_via_FederatedOIDC_test
-
-      - name: aws 
-        run: aws sts get-caller-identity
           
           
       - name: Install yq
@@ -124,6 +116,23 @@ jobs:
                 --query "Reservations[*].Instances[*].PrivateIpAddress" \
                 --output text)
             echo "node0_private_ip=$ip" >> $GITHUB_ENV
+
+
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_MANAGEMENT_ACCOUNT }}:role/${{ needs.EnvSetup.outputs.gha-role-name }}
+          role-session-name: GitHub_to_AWS_via_FederatedOIDC
+          aws-region: ${{ needs.EnvSetup.outputs.ecr-repo-aws-region }}
+
+      - name: Assume role in target account
+        id: assume-role-target
+        run: |
+          ROLE_ARN="arn:aws:iam::381492270411:role/iac-role"
+          CREDS=$(aws sts assume-role --role-arn $ROLE_ARN --role-session-name GitHubAction --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' --output text)
+          echo "AWS_ACCESS_KEY_ID=$(echo $CREDS | cut -d ' ' -f 1)" >> $GITHUB_ENV
+          echo "AWS_SECRET_ACCESS_KEY=$(echo $CREDS | cut -d ' ' -f 2)" >> $GITHUB_ENV
+          echo "AWS_SESSION_TOKEN=$(echo $CREDS | cut -d ' ' -f 3)" >> $GITHUB_ENV
           
       - name: Get Secret from AWS Secrets Manager
         id: get-secret
