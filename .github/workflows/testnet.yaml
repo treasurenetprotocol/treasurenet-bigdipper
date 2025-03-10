@@ -54,6 +54,7 @@ jobs:
           echo "ecr-repo-aws-region=${{ env.ecr-repo-aws-region }}" >> $GITHUB_OUTPUT
           echo "gha-role-name=${{ env.gha-role-name }}" >> $GITHUB_OUTPUT
   build-and-push:
+     needs: [ EnvSetup ]
      runs-on: self-hosted
      steps:
         - name: Checkout code
@@ -62,7 +63,7 @@ jobs:
   
 
   get-public-ip:
-    needs: [ EnvSetup ]
+    needs: [ EnvSetup ,build-and-push]
     runs-on: self-hosted
     outputs:
       public_ip: ${{ steps.get-public-ip.outputs.public_ip }}
@@ -77,13 +78,13 @@ jobs:
           aws-region: ${{ needs.EnvSetup.outputs.ecr-repo-aws-region }}
 
 
-      - name: Configure AWS credentials2
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          role-to-assume: arn:aws:iam::381492270411:role/full-ec2
-          aws-region: us-west-1
-          role-session-name: github-actions
-          audience: GitHub_to_AWS_via_FederatedOIDC_test
+      # - name: Configure AWS credentials2
+      #   uses: aws-actions/configure-aws-credentials@v1
+      #   with:
+      #     role-to-assume: arn:aws:iam::381492270411:role/full-ec2
+      #     aws-region: us-west-1
+      #     role-session-name: github-actions
+      #     audience: GitHub_to_AWS_via_FederatedOIDC_test
 
       - name: aws 
         run: aws sts get-caller-identity
@@ -134,8 +135,8 @@ jobs:
             echo "DATABASE_URL=$DATABASE_URL" >> $GITHUB_ENV
       - name: Update config.yaml with private IP
         run: |
-          pwd
-              yq e ".node.config.rpc.address = \"http://${{ env.node0_private_ip }}:26657\"" .github/scripts/ansible/config/config.yaml -i
+            pwd
+              yq e ".node.config.rpc.address = \"http://${{ env.node0_private_ip }}:26657\"" /data/actions-runner/_work/treasurenet-bigdipper/treasurenet-bigdipper/.github/scripts/ansible/config/config.yaml -i
               yq e ".node.config.grpc.address = \"http://${{ env.node0_private_ip }}:9090\"" .github/scripts/ansible/config/config.yaml -i
               yq e ".actions.node.rpc.address = \"http://${{ env.node0_private_ip }}:26657\"" .github/scripts/ansible/config/config.yaml -i
               yq e ".actions.node.grpc.address = \"http://${{ env.node0_private_ip }}:9090\"" .github/scripts/ansible/config/config.yaml -i
