@@ -53,14 +53,13 @@ jobs:
           echo "gha-role-name=${{ env.gha-role-name }}" >> $GITHUB_OUTPUT
           echo "ecr-repo-aws-region=${{ env.ecr-repo-aws-region }}" >> $GITHUB_OUTPUT
           echo "gha-role-name=${{ env.gha-role-name }}" >> $GITHUB_OUTPUT
+
   build-and-push:
-     needs: [ EnvSetup ]
-     runs-on: self-hosted
-     steps:
-        - name: Checkout code
-          uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
-        
-  
+    needs: [ EnvSetup ]
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
 
   get-public-ip:
     needs: [ EnvSetup ,build-and-push]
@@ -68,10 +67,6 @@ jobs:
     outputs:
       public_ip: ${{ steps.get-public-ip.outputs.public_ip }}
     steps:
-
-
-
-
       - name: Configure AWS credentials2
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -79,14 +74,6 @@ jobs:
           aws-region: us-west-1
           role-session-name: github-actions
           audience: GitHub_to_AWS_via_FederatedOIDC_test
-
-          
-          
-      - name: Install yq
-        run: |
-          sudo apt-get update
-          sudo snap install yq
-
 
       - name: Get Public IP of bigdipper instance
         id: get-public-ip
@@ -97,26 +84,26 @@ jobs:
             --query "Reservations[*].Instances[*].PublicIpAddress" \
             --output text)
           echo "public_ip=$public_ip" >> $GITHUB_OUTPUT
+
       - name: Get Private IP of bigdipper instance
         id: get-private-ip
         run: |
-            public_ip=$(aws ec2 describe-instances \
-              --region ${{ needs.EnvSetup.outputs.aws-region }} \
-              --filters "Name=tag:Name,Values=bigdipper" "Name=instance-state-name,Values=running" \
-              --query "Reservations[*].Instances[*].PrivateIpAddress" \
-              --output text)
-            echo "private_ip=$public_ip" >> $GITHUB_ENV
+          public_ip=$(aws ec2 describe-instances \
+            --region ${{ needs.EnvSetup.outputs.aws-region }} \
+            --filters "Name=tag:Name,Values=bigdipper" "Name=instance-state-name,Values=running" \
+            --query "Reservations[*].Instances[*].PrivateIpAddress" \
+            --output text)
+          echo "private_ip=$public_ip" >> $GITHUB_ENV
 
       - name: Get Private IP of node0 instance
         id: get-node0-private-ip
         run: |
-            ip=$(aws ec2 describe-instances \
-                --region us-west-1 \
-                --filters "Name=tag:Name,Values=node0" "Name=instance-state-name,Values=running" \
-                --query "Reservations[*].Instances[*].PrivateIpAddress" \
-                --output text)
-            echo "node0_private_ip=$ip" >> $GITHUB_ENV
-
+          ip=$(aws ec2 describe-instances \
+            --region us-west-1 \
+            --filters "Name=tag:Name,Values=node0" "Name=instance-state-name,Values=running" \
+            --query "Reservations[*].Instances[*].PrivateIpAddress" \
+            --output text)
+          echo "node0_private_ip=$ip" >> $GITHUB_ENV
 
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@e3dd6a429d7300a6a4c196c26e071d42e0343502 # v4.0.2
@@ -133,71 +120,64 @@ jobs:
           echo "AWS_ACCESS_KEY_ID=$(echo $CREDS | cut -d ' ' -f 1)" >> $GITHUB_ENV
           echo "AWS_SECRET_ACCESS_KEY=$(echo $CREDS | cut -d ' ' -f 2)" >> $GITHUB_ENV
           echo "AWS_SESSION_TOKEN=$(echo $CREDS | cut -d ' ' -f 3)" >> $GITHUB_ENV
-          
+
       - name: Get Secret from AWS Secrets Manager
         id: get-secret
         run: |
-            DATABASE_URL=$(aws secretsmanager get-secret-value \
-              --secret-id testnet/bigdipper/bigdipper \
-              --query SecretString \
-              --output text | jq -r .DATABASE_URL)
-            echo "DATABASE_URL=$DATABASE_URL" >> $GITHUB_ENV
-      - name: Verify changes
-        run: |
-              cat .github/scripts/ansible/config/config.yaml
-  
+          DATABASE_URL=$(aws secretsmanager get-secret-value \
+            --secret-id testnet/bigdipper/bigdipper \
+            --query SecretString \
+            --output text | jq -r .DATABASE_URL)
+          echo "DATABASE_URL=$DATABASE_URL" >> $GITHUB_ENV
+
+
+
       - name: Update config.yaml with private IP
         run: |
-            pwd
-            chmod u+x .github/scripts/ansible/config/config.yaml
-              yq e ".node.config.rpc.address = \"http://${{ env.node0_private_ip }}:26657\"" /data/actions-runner/_work/treasurenet-bigdipper/treasurenet-bigdipper/.github/scripts/ansible/config/config.yaml -i
-              yq e ".node.config.grpc.address = \"http://${{ env.node0_private_ip }}:9090\"" .github/scripts/ansible/config/config.yaml -i
-              yq e ".actions.node.rpc.address = \"http://${{ env.node0_private_ip }}:26657\"" .github/scripts/ansible/config/config.yaml -i
-              yq e ".actions.node.grpc.address = \"http://${{ env.node0_private_ip }}:9090\"" .github/scripts/ansible/config/config.yaml -i
-    
-
+          sed -i "s|rpc:.*|rpc: \"http://${{ env.node0_private_ip }}:26657\"|" .github/scripts/ansible/config/config.yaml
+          sed -i "s|grpc:.*|grpc: \"http://${{ env.node0_private_ip }}:9090\"|" .github/scripts/ansible/config/config.yaml
+          sed -i "s|actions.node.rpc:.*|actions.node.rpc: \"http://${{ env.node0_private_ip }}:26657\"|" .github/scripts/ansible/config/config.yaml
+          sed -i "s|actions.node.grpc:.*|actions.node.grpc: \"http://${{ env.node0_private_ip }}:9090\"|" .github/scripts/ansible/config/config.yaml
+      - name: Verify changes
+        run: |
+          cat .github/scripts/ansible/config/config.yaml
       - name: Extract password and host
         run: |
-            PASSWORD=$(echo $DATABASE_URL | awk -F':' '{print $3}' | awk -F'@' '{print $1}')
-             ENDPOINT=$(echo $DATABASE_URL | awk -F'@' '{print $2}' | awk -F'/' '{print $1}')
-            HOST=$(echo $ENDPOINT | awk -F':' '{print $1}')
-            echo "PASSWORD=$PASSWORD" >> $GITHUB_ENV
-            echo "HOST=$HOST" >> $GITHUB_ENV
-            echo "DATABASE_HOST=$HOST" > .env
-            echo "DATABASE_PASSWORD=$PASSWORD" >> .env
+          PASSWORD=$(echo $DATABASE_URL | awk -F':' '{print $3}' | awk -F'@' '{print $1}')
+          ENDPOINT=$(echo $DATABASE_URL | awk -F'@' '{print $2}' | awk -F'/' '{print $1}')
+          HOST=$(echo $ENDPOINT | awk -F':' '{print $1}')
+          echo "PASSWORD=$PASSWORD" >> $GITHUB_ENV
+          echo "HOST=$HOST" >> $GITHUB_ENV
+          echo "DATABASE_HOST=$HOST" > .env
+          echo "DATABASE_PASSWORD=$PASSWORD" >> .env
 
       - name: Copy .env file to ansible directory
         run: |
-              cp .env .github/scripts/ansible/config
+          cp .env .github/scripts/ansible/config
+
       - name: Update config.yaml
         run: |
-            yq e ".database.host = \"$HOST\"" .github/scripts/ansible/config/config.yaml -i
-            yq e ".database.password = \"$PASSWORD\"" .github/scripts/ansible/config/config.yaml -i
-  
+          sed -i "s|host:.*|host: \"$HOST\"|" .github/scripts/ansible/config/config.yaml
+          sed -i "s|password:.*|password: \"$PASSWORD\"|" .github/scripts/ansible/config/config.yaml
+
       - name: Verify changes
         run: |
-            cat .github/scripts/ansible/config/config.yaml
+          cat .github/scripts/ansible/config/config.yaml
 
       - name: Update docker-compose.yaml
         run: |
-              # 替换 HASURA_GRAPHQL_ACTIONS_HANDLER_WEBHOOK_BASEURL
-              yq e ".services.graphql-engine.environment.HASURA_GRAPHQL_ACTIONS_HANDLER_WEBHOOK_BASEURL = \"http://${{ env.PRIVATE_IP }}:3012\"" .github/scripts/ansible/config/docker-compose.yaml -i
-    
-              # 替换 HASURA_GRAPHQL_DATABASE_URL
-              yq e ".services.graphql-engine.environment.HASURA_GRAPHQL_DATABASE_URL = \"${{ env.DATABASE_URL }}\"" .github/scripts/ansible/config/docker-compose.yaml -i
-    
-              # 替换 PG_DATABASE_URL
-              yq e ".services.graphql-engine.environment.PG_DATABASE_URL = \"${{ env.DATABASE_URL }}\"" .github/scripts/ansible/config/docker-compose.yaml -i
-    
+          sed -i "s|HASURA_GRAPHQL_ACTIONS_HANDLER_WEBHOOK_BASEURL:.*|HASURA_GRAPHQL_ACTIONS_HANDLER_WEBHOOK_BASEURL: \"http://${{ env.PRIVATE_IP }}:3012\"|" .github/scripts/ansible/config/docker-compose.yaml
+          sed -i "s|HASURA_GRAPHQL_DATABASE_URL:.*|HASURA_GRAPHQL_DATABASE_URL: \"${{ env.DATABASE_URL }}\"|" .github/scripts/ansible/config/docker-compose.yaml
+          sed -i "s|PG_DATABASE_URL:.*|PG_DATABASE_URL: \"${{ env.DATABASE_URL }}\"|" .github/scripts/ansible/config/docker-compose.yaml
+
       - name: Verify changes
         run: |
-              cat .github/scripts/ansible/config/docker-compose.yaml
+          cat .github/scripts/ansible/config/docker-compose.yaml
 
       - name: copy genesis.json
         run: |
           ls 
           cp /data/node0/.treasurenetd/config/genesis.json .github/scripts/ansible/config/
-         
 
   deploy:
     needs: [ get-public-ip , EnvSetup ]
@@ -210,7 +190,7 @@ jobs:
           aws-region: us-west-1
           role-session-name: github-actions
           audience: GitHub_to_AWS_via_FederatedOIDC_test
-      
+
       - name: Install ansible on the runner
         run: |
           sudo apt update
@@ -223,23 +203,23 @@ jobs:
 
       - name: Prepare the ansible inventory file
         run: |
-            rm -f inventory.ini && touch inventory.ini
-            echo "[grafana]" > inventory.ini
-            # add grafana IP to inventory file
-            echo "${{ needs.get-public-ip.outputs.public_ip }} ansible_user=ubuntu" >> inventory.ini
+          rm -f inventory.ini && touch inventory.ini
+          echo "[grafana]" > inventory.ini
+          # add grafana IP to inventory file
+          echo "${{ needs.get-public-ip.outputs.public_ip }} ansible_user=ubuntu" >> inventory.ini
 
       - name: Print the inventory file
         run: |
-              cat inventory.ini
-    
+          cat inventory.ini
+
       - name: Install ansible on the runner
         run: |
-              sudo apt update
-              sudo apt install -y ansible
-    
+          sudo apt update
+          sudo apt install -y ansible
+
       - name: Add the Grafana SSH key to the known hosts
         run: |
-              ssh-keyscan -H ${{ needs.get-public-ip.outputs.public_ip }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ needs.get-public-ip.outputs.public_ip }} >> ~/.ssh/known_hosts
 
       - name: Run the ansible playbook
         run: |
