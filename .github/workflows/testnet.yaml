@@ -166,7 +166,7 @@ jobs:
 
       - name: Update docker-compose.yaml
         run: |
-          sed -i "s|HASURA_GRAPHQL_ACTIONS_HANDLER_WEBHOOK_BASEURL:.*|HASURA_GRAPHQL_ACTIONS_HANDLER_WEBHOOK_BASEURL: \"http://${{ env.PRIVATE_IP }}:3012\"|" .github/scripts/ansible/config/docker-compose.yaml
+          sed -i "s|HASURA_GRAPHQL_ACTIONS_HANDLER_WEBHOOK_BASEURL:.*|HASURA_GRAPHQL_ACTIONS_HANDLER_WEBHOOK_BASEURL: \"http://${{ env.private_ip }}:3012\"|" .github/scripts/ansible/config/docker-compose.yaml
           sed -i "s|HASURA_GRAPHQL_DATABASE_URL:.*|HASURA_GRAPHQL_DATABASE_URL: \"${{ env.DATABASE_URL }}\"|" .github/scripts/ansible/config/docker-compose.yaml
           sed -i "s|PG_DATABASE_URL:.*|PG_DATABASE_URL: \"${{ env.DATABASE_URL }}\"|" .github/scripts/ansible/config/docker-compose.yaml
 
