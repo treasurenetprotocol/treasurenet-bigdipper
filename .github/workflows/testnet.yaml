@@ -143,8 +143,8 @@ jobs:
         run: |
           mkdir -p ./nginx/certs
           SECRET_STRING=$(aws secretsmanager get-secret-value --secret-id testnet/bigdipper/nginx  --query SecretString --output text)
-          echo "$SECRET_STRING" | jq -r .ssl_certificate > ./nginx/certs/cloudflare.pem
-          echo "$SECRET_STRING" | jq -r .ssl_key > ./nginx/certs/cloudflare.key
+          echo "$SECRET_STRING" | jq -r .ssl_certificate > .github/scripts/ansible/config/cloudflare.pem
+          echo "$SECRET_STRING" | jq -r .ssl_key > .github/scripts/ansible/config/cloudflare.key
 
 
       - name: Update config.yaml with private IP

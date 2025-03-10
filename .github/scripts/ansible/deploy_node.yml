@@ -82,6 +82,19 @@
       args:
         executable: /bin/bash
 
+    - name: Check if docker-compose is running
+      shell: docker-compose ps -q
+      args:
+        chdir: /home/ubuntu/data
+      register: docker_compose_status
+      changed_when: false
+
+    - name: Bring down docker-compose services if running
+      shell: docker-compose down -v
+      args:
+        chdir: /home/ubuntu/data
+      when: docker_compose_status.stdout != ""
+
     - name: Bring up docker-compose services
       shell: |
         cd /home/ubuntu/data
@@ -113,6 +126,10 @@
     - name: Setup and build treasurenet-bigdipper
       shell: |
         cd /home/ubuntu/data/treasurenet-bigdipper
+        cd nginx
+        cp /home/ubuntu/data/cloudflare.pem ./certs/
+        cp /home/ubuntu/data/cloudflare.key ./certs/
+        docker-compose up -d
         cp /home/ubuntu/data/.env1 ./
         mv .env1 .env
         npm install
