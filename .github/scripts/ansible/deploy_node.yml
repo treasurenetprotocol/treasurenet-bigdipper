@@ -62,6 +62,7 @@
     - name: Execute schema SQL files via psql
       shell: |
         cd /home/ubuntu/data/callisto/database/schema
+         source /home/ubuntu/data/.env
         for sql_file in 00-cosmos.sql 01-auth.sql 02-bank.sql 03-staking.sql 04-consensus.sql 05-mint.sql 06-distribution.sql 07-pricefeed.sql 08-gov.sql 09-modules.sql 10-slashing.sql 12-feegrant.sql; do
           echo "Executing ${sql_file}..."
           PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ${sql_file}
