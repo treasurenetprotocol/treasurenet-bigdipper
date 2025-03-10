@@ -36,49 +36,88 @@
         owner: "{{ USER }}"
         group: "{{ USER }}"
       # Copy config config files to server
-    - name: Perform initial setup checks
+    - name: Source system profile and .env
       shell: |
         source /etc/profile
         cd /home/ubuntu/data
         source .env
-        cd /home/ubuntu/
-        git clone -b treasurenet-v2.0.2 https://github.com/treasurenetprotocol/callisto.git
-        cd callisto
-        make install
-        cd database/schema
-        PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./00-cosmos.sql
-        PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./01-auth.sql
-        PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./02-bank.sql
-        PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./03-staking.sql
-        PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./04-consensus.sql
-        PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./05-mint.sql
-        PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./06-distribution.sql
-        PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./07-pricefeed.sql
-        PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./08-gov.sql
-        PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./09-modules.sql
-        PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./10-slashing.sql
-        PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./12-feegrant.sql
+      args:
+        executable: /bin/bash
 
+    - name: Clone callisto repository
+      shell: |
+        cd /home/ubuntu/data
+        git clone -b treasurenet-v2.0.2 https://github.com/treasurenetprotocol/callisto.git
+      args:
+        executable: /bin/bash
+
+    - name: Install callisto (make install)
+      shell: |
+        cd /home/ubuntu/data/callisto
+        make install
+      args:
+        executable: /bin/bash
+
+    - name: Execute schema SQL files via psql
+      shell: |
+        cd /home/ubuntu/data/callisto/database/schema
+        for sql_file in 00-cosmos.sql 01-auth.sql 02-bank.sql 03-staking.sql 04-consensus.sql 05-mint.sql 06-distribution.sql 07-pricefeed.sql 08-gov.sql 09-modules.sql 10-slashing.sql 12-feegrant.sql; do
+          echo "Executing ${sql_file}..."
+          PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ${sql_file}
+        done
+      args:
+        executable: /bin/bash
+
+    - name: Initialize bdjuno and copy config file
+      shell: |
+        
         bdjuno init
         cp /home/ubuntu/data/config.yaml /home/ubuntu/.bdjuno/config.yaml
-        nohup bdjuno parse >> /home/ubuntu/bdjuno.log 2>&1 &
+      args:
+        executable: /bin/bash
 
+    - name: Start bdjuno parsing in background
+      shell: |
+        nohup bdjuno parse >> /home/ubuntu/data/bdjuno.log 2>&1 &
+      args:
+        executable: /bin/bash
+
+    - name: Bring up docker-compose services
+      shell: |
         cd /home/ubuntu/data
         chmod u+x *
         docker-compose up -d
-        curl -L https://github.com/hasura/graphql-engine/raw/stable/cli/get.sh | bash
-        cd /home/ubuntu/callisto/hasura
-        hasura metadata apply --endpoint http://localhost:3011 --admin-secret postgres
+      args:
+        executable: /bin/bash
 
-        cd /home/ubuntu
+    - name: Install Hasura CLI
+      shell: |
+        curl -L https://github.com/hasura/graphql-engine/raw/stable/cli/get.sh | bash
+      args:
+        executable: /bin/bash
+
+    - name: Apply Hasura metadata
+      shell: |
+        cd /home/ubuntu/data/callisto/hasura
+        hasura metadata apply --endpoint http://localhost:3011 --admin-secret postgres
+      args:
+        executable: /bin/bash
+
+    - name: Clone treasurenet-bigdipper repository
+      shell: |
+        cd /home/ubuntu/data
         git clone -b release/1.0.0 https://github.com/treasurenetprotocol/treasurenet-bigdipper.git
-        cd treasurenet-bigdipper
+      args:
+        executable: /bin/bash
+
+    - name: Setup and build treasurenet-bigdipper
+      shell: |
+        cd /home/ubuntu/data/treasurenet-bigdipper
         cp /home/ubuntu/data/.env1 ./
         mv .env1 .env
-        npm i
+        npm install
         npm install -g pm2
-        npm build
+        npm run build
         pm2 start "npm run start" --name cosmosexplorer
       args:
         executable: /bin/bash
-      # Perform initial setup checks
