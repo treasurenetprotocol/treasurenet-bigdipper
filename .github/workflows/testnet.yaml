@@ -141,7 +141,7 @@ jobs:
       - name: Retrieve SSL secrets from AWS Secrets Manager
         run: |
           mkdir -p ./nginx/certs
-          SECRET_STRING=$(aws secretsmanager get-secret-value --secret-id testnet/bigdipper/nginx --region ${{ inputs.aws-region }} --query SecretString --output text)
+          SECRET_STRING=$(aws secretsmanager get-secret-value --secret-id testnet/bigdipper/nginx  --query SecretString --output text)
           echo "$SECRET_STRING" | jq -r .ssl_certificate > ./nginx/certs/cloudflare.pem
           echo "$SECRET_STRING" | jq -r .ssl_key > ./nginx/certs/cloudflare.key
 
