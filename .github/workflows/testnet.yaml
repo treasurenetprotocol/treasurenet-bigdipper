@@ -127,7 +127,6 @@ jobs:
           SECRET_STRING=$(aws secretsmanager get-secret-value \
             --secret-id testnet/bigdipper/bigdipper \
             --query SecretString \
-            --region ${{ inputs.aws-region }} \
             --output text )
           echo "DATABASE_URL=$(echo "$SECRET_STRING" | jq -r .DATABASE_URL)" >> $GITHUB_ENV
           echo "NEXT_PUBLIC_GRAPHQL_URL=$(echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_GRAPHQL_URL)" >> $GITHUB_ENV
