@@ -1,0 +1,76 @@
+---
+- name: Deploy Node
+  hosts: all
+  become: yes
+
+  vars:
+    PATH: /home/ubuntu
+    USER: ubuntu
+
+
+  tasks:
+
+    - name: Print current working directory and list files
+      shell: |
+        pwd
+        ls
+        sudo rm -rf {{ PATH }}/data/*
+      register: shell_output
+      ignore_errors: yes
+      # Print current working directory and list files
+
+    - name: Create directory for data 
+      file:
+        path: "{{ PATH }}/data"
+        state: directory
+        owner: "{{ USER }}"
+        group: "{{ USER }}"
+        mode: '0755'
+      # Create directory for data 
+
+    - name: Copy config config files to server
+      copy:
+        src: config/
+        dest: "{{ PATH }}/data"
+        force: yes
+        owner: "{{ USER }}"
+        group: "{{ USER }}"
+      # Copy config config files to server
+    - name: Perform initial setup checks
+      shell: |
+        source /etc/profile
+        cd /home/ubuntu/data
+        source .env
+        cd /home/ubuntu/
+        git clone -b treasurenet-v2.0.2 https://github.com/treasurenetprotocol/callisto.git
+        cd callisto
+        make install
+        cd database/schema
+        PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./00-cosmos.sql
+        PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./01-auth.sql
+        PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./02-bank.sql
+        PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./03-staking.sql
+        PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./04-consensus.sql
+        PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./05-mint.sql
+        PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./06-distribution.sql
+        PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./07-pricefeed.sql
+        PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./08-gov.sql
+        PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./09-modules.sql
+        PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./10-slashing.sql
+        PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./12-feegrant.sql
+
+        callisto init
+        cp /home/ubuntu/data/config.yaml /home/ubuntu/.callisto/config.yaml
+        nohup callisto parse >> /home/ubuntu/bdjuno.log 2>&1 &
+        cd /home/ubuntu/data
+        docker-compose up -d
+        cd /home/ubuntu/callisto/hasura
+        hasura metadata apply --endpoint http://localhost:3011 --admin-secret postgres
+        
+
+
+
+
+      args:
+        executable: /bin/bash
+      # Perform initial setup checks
