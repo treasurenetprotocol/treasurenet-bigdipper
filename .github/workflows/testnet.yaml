@@ -129,13 +129,13 @@ jobs:
             --query SecretString \
             --output text )
           echo "DATABASE_URL=$(echo "$SECRET_STRING" | jq -r .DATABASE_URL)" >> $GITHUB_ENV
-          echo "NEXT_PUBLIC_GRAPHQL_URL=$(echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_GRAPHQL_URL)" >> $GITHUB_ENV
-          echo "NEXT_PUBLIC_GRAPHQL_WS=$(echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_GRAPHQL_WS)" >> $GITHUB_ENV
-          echo "NODE_ENV=$(echo "$SECRET_STRING" | jq -r .NODE_ENV)" >> $GITHUB_ENV
-          echo "PORT=$(echo "$SECRET_STRING" | jq -r .PORT)" >> $GITHUB_ENV
-          echo "NEXT_PUBLIC_URL=$(echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_URL)" >> $GITHUB_ENV
-          echo "NEXT_PUBLIC_RPC_WEBSOCKET=$(echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_RPC_WEBSOCKET)" >> $GITHUB_ENV
-          echo "NEXT_PUBLIC_CHAIN_TYPE=$(echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_CHAIN_TYPE)" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_GRAPHQL_URL=$(echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_GRAPHQL_URL)" > $>>.env1
+          echo "NEXT_PUBLIC_GRAPHQL_WS=$(echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_GRAPHQL_WS)" >> $>>.env1
+          echo "NODE_ENV=$(echo "$SECRET_STRING" | jq -r .NODE_ENV)" >> $>>.env1
+          echo "PORT=$(echo "$SECRET_STRING" | jq -r .PORT)" >> $>>.env1
+          echo "NEXT_PUBLIC_URL=$(echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_URL)" >> $>>.env1
+          echo "NEXT_PUBLIC_RPC_WEBSOCKET=$(echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_RPC_WEBSOCKET)" >> $>>.env1
+          echo "NEXT_PUBLIC_CHAIN_TYPE=$(echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_CHAIN_TYPE)" >> $>>.env1
           cp .env1 .github/scripts/ansible/config
 
 
