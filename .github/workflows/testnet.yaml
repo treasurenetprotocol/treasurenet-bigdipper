@@ -87,7 +87,8 @@ jobs:
       - name: Install yq
         run: |
           sudo apt-get update
-          sudo apt-get install -y yq
+          sudo snap install yq
+
 
       - name: Get Public IP of bigdipper instance
         id: get-public-ip
