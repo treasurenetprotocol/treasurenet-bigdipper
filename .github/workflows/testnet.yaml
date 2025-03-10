@@ -3,7 +3,7 @@ name: Publish to npm, Tag and GH Release
 on:
   push:
     branches:
-      - 'feature-**'
+      - 'feature/**'
 
 env:
   gha-role-name: "GitHubAction-AssumeRoleWithAction"
