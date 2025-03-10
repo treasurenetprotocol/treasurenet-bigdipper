@@ -1,7 +1,7 @@
 ---
 - name: Deploy Node
   hosts: all
-  become: yes
+  become: no
 
   vars:
     PATH: /home/ubuntu
