@@ -223,4 +223,4 @@ jobs:
 
       - name: Run the ansible playbook
         run: |
-          ansible-playbook -i inventory.ini .github/scripts/ansible/config/ansible/deploy_node.yml
+          ansible-playbook -i inventory.ini .github/scripts/ansible/deploy_node.yml
