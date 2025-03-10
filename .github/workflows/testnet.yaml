@@ -53,7 +53,12 @@ jobs:
           echo "gha-role-name=${{ env.gha-role-name }}" >> $GITHUB_OUTPUT
           echo "ecr-repo-aws-region=${{ env.ecr-repo-aws-region }}" >> $GITHUB_OUTPUT
           echo "gha-role-name=${{ env.gha-role-name }}" >> $GITHUB_OUTPUT
-
+  build-and-push:
+     runs-on: self-hosted
+     steps:
+        - name: Checkout code
+          uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
+        
   
 
   get-public-ip:
@@ -129,6 +134,7 @@ jobs:
             echo "DATABASE_URL=$DATABASE_URL" >> $GITHUB_ENV
       - name: Update config.yaml with private IP
         run: |
+          pwd
               yq e ".node.config.rpc.address = \"http://${{ env.node0_private_ip }}:26657\"" .github/scripts/ansible/config/config.yaml -i
               yq e ".node.config.grpc.address = \"http://${{ env.node0_private_ip }}:9090\"" .github/scripts/ansible/config/config.yaml -i
               yq e ".actions.node.rpc.address = \"http://${{ env.node0_private_ip }}:26657\"" .github/scripts/ansible/config/config.yaml -i
