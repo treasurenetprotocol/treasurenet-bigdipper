@@ -145,6 +145,7 @@ jobs:
       - name: Update config.yaml with private IP
         run: |
             pwd
+            chmod u+x .github/scripts/ansible/config/config.yaml
               yq e ".node.config.rpc.address = \"http://${{ env.node0_private_ip }}:26657\"" /data/actions-runner/_work/treasurenet-bigdipper/treasurenet-bigdipper/.github/scripts/ansible/config/config.yaml -i
               yq e ".node.config.grpc.address = \"http://${{ env.node0_private_ip }}:9090\"" .github/scripts/ansible/config/config.yaml -i
               yq e ".actions.node.rpc.address = \"http://${{ env.node0_private_ip }}:26657\"" .github/scripts/ansible/config/config.yaml -i
