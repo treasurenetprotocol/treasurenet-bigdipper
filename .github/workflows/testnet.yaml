@@ -124,20 +124,34 @@ jobs:
       - name: Get Secret from AWS Secrets Manager
         id: get-secret
         run: |
-          DATABASE_URL=$(aws secretsmanager get-secret-value \
+          SECRET_STRING=$(aws secretsmanager get-secret-value \
             --secret-id testnet/bigdipper/bigdipper \
             --query SecretString \
-            --output text | jq -r .DATABASE_URL)
-          echo "DATABASE_URL=$DATABASE_URL" >> $GITHUB_ENV
-
+            --output text )
+          echo "$SECRET_STRING" | jq -r .DATABASE_URL >> $GITHUB_ENV
+          echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_GRAPHQL_URL >.env1
+          echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_GRAPHQL_WS >>.env1
+          echo "$SECRET_STRING" | jq -r .NODE_ENV >>.env1
+          echo "$SECRET_STRING" | jq -r .PORT >>.env1
+          echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_URL >>.env1
+          echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_RPC_WEBSOCKET >>.env1
+          echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_CHAIN_TYPE >>.env1
+          
+      - name: Retrieve SSL secrets from AWS Secrets Manager
+        run: |
+          mkdir -p ./nginx/certs
+          SECRET_STRING=$(aws secretsmanager get-secret-value --secret-id testnet/bigdipper/nginx --region ${{ inputs.aws-region }} --query SecretString --output text)
+          echo "$SECRET_STRING" | jq -r .ssl_certificate > ./nginx/certs/cloudflare.pem
+          echo "$SECRET_STRING" | jq -r .ssl_key > ./nginx/certs/cloudflare.key
 
 
       - name: Update config.yaml with private IP
         run: |
-          sed -i "s|rpc:.*|rpc: \"http://${{ env.node0_private_ip }}:26657\"|" .github/scripts/ansible/config/config.yaml
-          sed -i "s|grpc:.*|grpc: \"http://${{ env.node0_private_ip }}:9090\"|" .github/scripts/ansible/config/config.yaml
-          sed -i "s|actions.node.rpc:.*|actions.node.rpc: \"http://${{ env.node0_private_ip }}:26657\"|" .github/scripts/ansible/config/config.yaml
-          sed -i "s|actions.node.grpc:.*|actions.node.grpc: \"http://${{ env.node0_private_ip }}:9090\"|" .github/scripts/ansible/config/config.yaml
+          sed -i '/rpc:/,/max_connections/ s/^\(\s*address:\s*\).*$/\1"http:\/\/'"${node0_private_ip}"':26657"/' .github/scripts/ansible/config/config.yaml
+          sed -i '/grpc:/,/insecure/ s/^\(\s*address:\s*\).*$/\1"http:\/\/'"${node0_private_ip}"':9090"/' .github/scripts/ansible/config/config.yaml
+          sed -i '/rpc:/,/grpc:/ s/^\(\s*address:\s*\).*$/\1"http:\/\/'"${node0_private_ip}"':26657"/' .github/scripts/ansible/config/config.yaml
+          sed -i '/grpc:/,/insecure/ s/^\(\s*address:\s*\).*$/\1"http:\/\/'"${node0_private_ip}"':9090"/' .github/scripts/ansible/config/config.yaml
+
       - name: Verify changes
         run: |
           cat .github/scripts/ansible/config/config.yaml

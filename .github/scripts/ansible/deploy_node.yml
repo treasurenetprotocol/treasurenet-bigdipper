@@ -59,18 +59,26 @@
         PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./10-slashing.sql
         PGPASSWORD=${DATABASE_PASSWORD} psql -h ${DATABASE_HOST} -p 5432 -d bdjuno -U postgres -f ./12-feegrant.sql
 
-        callisto init
-        cp /home/ubuntu/data/config.yaml /home/ubuntu/.callisto/config.yaml
-        nohup callisto parse >> /home/ubuntu/bdjuno.log 2>&1 &
+        bdjuno init
+        cp /home/ubuntu/data/config.yaml /home/ubuntu/.bdjuno/config.yaml
+        nohup bdjuno parse >> /home/ubuntu/bdjuno.log 2>&1 &
+
         cd /home/ubuntu/data
+        chmod u+x *
         docker-compose up -d
+        curl -L https://github.com/hasura/graphql-engine/raw/stable/cli/get.sh | bash
         cd /home/ubuntu/callisto/hasura
         hasura metadata apply --endpoint http://localhost:3011 --admin-secret postgres
-        
 
-
-
-
+        cd /home/ubuntu
+        git clone -b release/1.0.0 https://github.com/treasurenetprotocol/treasurenet-bigdipper.git
+        cd treasurenet-bigdipper
+        cp /home/ubuntu/data/.env1 ./
+        mv .env1 .env
+        npm i
+        npm install -g pm2
+        npm build
+        pm2 start "npm run start" --name cosmosexplorer
       args:
         executable: /bin/bash
       # Perform initial setup checks
