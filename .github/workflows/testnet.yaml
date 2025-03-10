@@ -127,16 +127,18 @@ jobs:
           SECRET_STRING=$(aws secretsmanager get-secret-value \
             --secret-id testnet/bigdipper/bigdipper \
             --query SecretString \
+            --region ${{ inputs.aws-region }} \
             --output text )
-          echo "$SECRET_STRING" | jq -r .DATABASE_URL >> $GITHUB_ENV
-          echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_GRAPHQL_URL >.env1
-          echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_GRAPHQL_WS >>.env1
-          echo "$SECRET_STRING" | jq -r .NODE_ENV >>.env1
-          echo "$SECRET_STRING" | jq -r .PORT >>.env1
-          echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_URL >>.env1
-          echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_RPC_WEBSOCKET >>.env1
-          echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_CHAIN_TYPE >>.env1
-          
+          echo "DATABASE_URL=$(echo "$SECRET_STRING" | jq -r .DATABASE_URL)" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_GRAPHQL_URL=$(echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_GRAPHQL_URL)" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_GRAPHQL_WS=$(echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_GRAPHQL_WS)" >> $GITHUB_ENV
+          echo "NODE_ENV=$(echo "$SECRET_STRING" | jq -r .NODE_ENV)" >> $GITHUB_ENV
+          echo "PORT=$(echo "$SECRET_STRING" | jq -r .PORT)" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_URL=$(echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_URL)" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_RPC_WEBSOCKET=$(echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_RPC_WEBSOCKET)" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_CHAIN_TYPE=$(echo "$SECRET_STRING" | jq -r .NEXT_PUBLIC_CHAIN_TYPE)" >> $GITHUB_ENV
+
+
       - name: Retrieve SSL secrets from AWS Secrets Manager
         run: |
           mkdir -p ./nginx/certs
