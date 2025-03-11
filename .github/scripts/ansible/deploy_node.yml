@@ -127,15 +127,18 @@
 
     - name: Setup and build treasurenet-bigdipper
       shell: |
-        cd /home/ubuntu/data/treasurenet-bigdipper
-        cd nginx
+        cd /home/ubuntu/data/treasurenet-bigdipper/nginx
+        chmod u+x *
+        mkdir certs
+        mkdir logs
         cp /home/ubuntu/data/cloudflare.pem ./certs/
         cp /home/ubuntu/data/cloudflare.key ./certs/
         docker-compose up -d
+        cd /home/ubuntu/data/treasurenet-bigdipper
         cp /home/ubuntu/data/.env1 ./
         mv .env1 .env
-        npm install
-        npm install -g pm2
+        npm install --force
+        sudo npm install -g pm2
         npm run build
         pm2 start "npm run start" --name cosmosexplorer
       args:
