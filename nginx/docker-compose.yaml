@@ -7,4 +7,4 @@ services:
     container_name: nginx
     volumes:
       - /home/ubuntu/data/treasurenet-bigdipper/nginx:/etc/nginx
-      - /data/nginx:/data/statics/
+      - /home/ubuntu/data/treasurenet-bigdipper/statics:/data/statics
