@@ -6,5 +6,5 @@ services:
     restart: unless-stopped
     container_name: nginx
     volumes:
-      - /data/nginx:/etc/nginx
+      - /home/ubuntu/data/treasurenet-bigdipper/nginx:/etc/nginx
       - /data/nginx:/data/statics/

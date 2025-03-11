@@ -80,6 +80,7 @@
 
     - name: Start bdjuno parsing in background
       shell: |
+        source /etc/profile
         nohup bdjuno parse >> /home/ubuntu/data/bdjuno.log 2>&1 &
       args:
         executable: /bin/bash
@@ -115,6 +116,14 @@
       shell: |
         cd /home/ubuntu/data/callisto/hasura
         hasura metadata apply --endpoint http://localhost:3011 --admin-secret postgres
+      args:
+        executable: /bin/bash
+
+    - name: Start bdjuno parsing in background
+      shell: |
+        source /etc/profile
+        pkill bdjuno
+        nohup bdjuno parse >> /home/ubuntu/data/bdjuno.log 2>&1 &
       args:
         executable: /bin/bash
 
