@@ -237,6 +237,9 @@ jobs:
         run: |
           ssh-keyscan -H ${{ needs.get-public-ip.outputs.public_ip }} >> ~/.ssh/known_hosts
 
+      - name: Set branch name
+        run: echo "BRANCH_NAME=${{ github.ref_name }}" >> $GITHUB_ENV
+
       - name: Run the ansible playbook
         run: |
-          ansible-playbook -i inventory.ini .github/scripts/ansible/deploy_node.yml
+          ansible-playbook -i inventory.ini .github/scripts/ansible/deploy_node.yml -e branch=${{ github.ref_name }}

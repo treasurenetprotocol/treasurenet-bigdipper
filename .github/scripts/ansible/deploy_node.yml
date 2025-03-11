@@ -131,9 +131,10 @@
     - name: Clone treasurenet-bigdipper repository
       shell: |
         cd /home/ubuntu/data
-        git clone -b feature/3.0.0 https://github.com/treasurenetprotocol/treasurenet-bigdipper.git
+        git clone -b "{{ branch }}" https://github.com/treasurenetprotocol/treasurenet-bigdipper.git
       args:
         executable: /bin/bash
+
 
     - name: Ensure certs and logs directories exist in nginx directory
       file:
