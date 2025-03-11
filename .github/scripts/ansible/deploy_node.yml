@@ -72,7 +72,7 @@
 
     - name: Initialize bdjuno and copy config file
       shell: |
-        
+        souece /etc/profile
         bdjuno init
         cp /home/ubuntu/data/config.yaml /home/ubuntu/.bdjuno/config.yaml
       args:
