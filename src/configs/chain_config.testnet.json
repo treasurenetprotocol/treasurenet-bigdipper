@@ -1,7 +1,7 @@
 {
   "title": "TreasureNet",
   "network": "treasurenet_5005-1",
-  "icon": "https://cosmosexplorer.testnet.treasurenet.io/statics/TNT_log_small_new.png",
+  "icon": "https://cosmosexplorer.testnet.treasurenet.io/statics/TNT_logo_small_new.png",
   "logo": {
      "default": "https://cosmosexplorer.testnet.treasurenet.io/statics/TNT_logo_big.png"
   },
