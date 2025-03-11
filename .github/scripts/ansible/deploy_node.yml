@@ -15,6 +15,7 @@
         pwd
         ls
         sudo rm -rf {{ PATH }}/data/*
+        pkill bdjuno
       register: shell_output
       ignore_errors: yes
       # Print current working directory and list files
@@ -134,21 +135,106 @@
       args:
         executable: /bin/bash
 
-    - name: Setup and build treasurenet-bigdipper
-      shell: |
-        cd /home/ubuntu/data/treasurenet-bigdipper/nginx
-        chmod u+x *
-        mkdir certs
-        mkdir logs
-        cp /home/ubuntu/data/cloudflare.pem ./certs/
-        cp /home/ubuntu/data/cloudflare.key ./certs/
-        docker-compose up -d
-        cd /home/ubuntu/data/treasurenet-bigdipper
-        cp /home/ubuntu/data/.env1 ./
-        mv .env1 .env
-        npm install --force
-        sudo npm install -g pm2
-        npm run build
-        pm2 start "npm run start" --name cosmosexplorer
-      args:
-        executable: /bin/bash
+- name: Ensure certs and logs directories exist in nginx directory
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: '0755'
+  loop:
+    - /home/ubuntu/data/treasurenet-bigdipper/nginx/certs
+    - /home/ubuntu/data/treasurenet-bigdipper/nginx/logs
+
+- name: Set execute permissions for files in nginx directory
+  file:
+    path: /home/ubuntu/data/treasurenet-bigdipper/nginx
+    recurse: yes
+    mode: '0755'
+
+- name: Copy cloudflare.pem to certs directory
+  copy:
+    src: /home/ubuntu/data/cloudflare.pem
+    dest: /home/ubuntu/data/treasurenet-bigdipper/nginx/certs/cloudflare.pem
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+- name: Copy cloudflare.key to certs directory
+  copy:
+    src: /home/ubuntu/data/cloudflare.key
+    dest: /home/ubuntu/data/treasurenet-bigdipper/nginx/certs/cloudflare.key
+    owner: ubuntu
+    group: ubuntu
+    mode: '0644'
+
+- name: Check if docker-compose services are running in nginx directory
+  shell: docker-compose ps -q
+  args:
+    chdir: /home/ubuntu/data/treasurenet-bigdipper/nginx
+    executable: /bin/bash
+  register: docker_compose_status
+  changed_when: false
+
+- name: Bring down docker-compose services if running
+  shell: docker-compose down -v
+  args:
+    chdir: /home/ubuntu/data/treasurenet-bigdipper/nginx
+    executable: /bin/bash
+  when: docker_compose_status.stdout != ""
+
+- name: Bring up docker-compose services
+  shell: docker-compose up -d
+  args:
+    chdir: /home/ubuntu/data/treasurenet-bigdipper/nginx
+    executable: /bin/bash
+
+- name: Copy .env1 and rename to .env in treasurenet-bigdipper directory
+  shell: |
+    cp /home/ubuntu/data/.env1 ./
+    mv .env1 .env
+  args:
+    chdir: /home/ubuntu/data/treasurenet-bigdipper
+    executable: /bin/bash
+
+- name: Run npm install with force in treasurenet-bigdipper directory
+  shell: npm install --force
+  args:
+    chdir: /home/ubuntu/data/treasurenet-bigdipper
+    executable: /bin/bash
+
+- name: Install pm2 globally using npm
+  shell: sudo npm install -g pm2
+  args:
+    executable: /bin/bash
+
+- name: Build the project with npm run build
+  shell: npm run build
+  args:
+    chdir: /home/ubuntu/data/treasurenet-bigdipper
+    executable: /bin/bash
+
+- name: Check if pm2 process "cosmosexplorer" is running
+  shell: |
+    if pm2 list | grep -q cosmosexplorer; then
+      echo "running"
+    fi
+  args:
+    executable: /bin/bash
+  register: pm2_process_check
+  ignore_errors: yes
+
+- name: Stop and delete pm2 process "cosmosexplorer" if running
+  shell: |
+    pm2 delete cosmosexplorer
+  args:
+    executable: /bin/bash
+  when: pm2_process_check.stdout == "running"
+
+- name: Start cosmosexplorer with pm2
+  shell: pm2 start "npm run start" --name cosmosexplorer
+  args:
+    chdir: /home/ubuntu/data/treasurenet-bigdipper
+    executable: /bin/bash
+
+
