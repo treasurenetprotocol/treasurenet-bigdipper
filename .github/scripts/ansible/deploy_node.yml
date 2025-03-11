@@ -156,6 +156,7 @@
       copy:
         src: /home/ubuntu/data/cloudflare.pem
         dest: /home/ubuntu/data/treasurenet-bigdipper/nginx/certs/cloudflare.pem
+        remote_src: yes
         owner: ubuntu
         group: ubuntu
         mode: '0644'
@@ -164,6 +165,7 @@
       copy:
         src: /home/ubuntu/data/cloudflare.key
         dest: /home/ubuntu/data/treasurenet-bigdipper/nginx/certs/cloudflare.key
+        remote_src: yes
         owner: ubuntu
         group: ubuntu
         mode: '0644'
