@@ -242,4 +242,4 @@ jobs:
 
       - name: Run the ansible playbook
         run: |
-          ansible-playbook -i inventory.ini .github/scripts/ansible/deploy_node.yml -e branch=${{ github.ref_name }}
+          ansible-playbook -i inventory.ini .github/scripts/ansible/deploy_bigdipper.yml -e branch=${{ github.ref_name }}
