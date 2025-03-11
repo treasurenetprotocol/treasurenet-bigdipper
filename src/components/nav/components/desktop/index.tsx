@@ -83,7 +83,7 @@ const Desktop: React.FC<{
             />
           )} */}
           <div className={classes.logo} onClick={toggleMenu}>
-            <img src={chainConfig.logo.default} alt="logo" />
+            <img src={chainConfig.logo.default} alt="logo" style="width:100%" />
           </div>
 
           <MenuItems />
