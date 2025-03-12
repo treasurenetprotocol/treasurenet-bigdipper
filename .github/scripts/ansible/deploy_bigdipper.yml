@@ -171,6 +171,15 @@
         group: ubuntu
         mode: '0644'
 
+    - name: Copy nginx.conf to certs directory
+      copy:
+        src: /home/ubuntu/data/nginx.conf
+        dest: /home/ubuntu/data/treasurenet-bigdipper/nginx/nginx.conf
+        remote_src: yes
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+
     - name: Check if docker-compose services are running in nginx directory
       shell: docker-compose ps -q
       args:
