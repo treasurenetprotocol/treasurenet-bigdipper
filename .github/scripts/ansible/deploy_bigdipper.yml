@@ -119,6 +119,13 @@
         hasura metadata apply --endpoint http://localhost:3011 --admin-secret postgres
       args:
         executable: /bin/bash
+        
+    - name: Clone treasurenet-bigdipper repository
+      shell: |
+        cd /home/ubuntu/data
+        git clone -b "{{ branch }}" https://github.com/treasurenetprotocol/treasurenet-bigdipper.git
+      args:
+        executable: /bin/bash
 
     - name: Start bdjuno parsing in background
       shell: |
@@ -128,12 +135,7 @@
       args:
         executable: /bin/bash
 
-    - name: Clone treasurenet-bigdipper repository
-      shell: |
-        cd /home/ubuntu/data
-        git clone -b "{{ branch }}" https://github.com/treasurenetprotocol/treasurenet-bigdipper.git
-      args:
-        executable: /bin/bash
+
 
 
     - name: Ensure certs and logs directories exist in nginx directory
